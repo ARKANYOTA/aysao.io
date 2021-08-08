@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body {
+            text-align: center;
+            background-color: #111312;
+            color: white;
+        }
+        #center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%)
+        }
+        .Message{
+            border: 1px solid;
+            padding: 10px;
+            border-radius: 20px;
+        }
+        #errorMessage{
+            background-color: #cf667955;
+            border-color: #cf6679;
+        }
+        #okMessage{
+            background-color: #138A3655;
+            border-color: #138A36;
+        }
+        .warnMessage{
+            background-color: #D7CF0755;
+            border-color: #D7CF07;
+        }
+        a:link{
+            color: red;
+        }
+        a:visited{
+            color: darkred
+        }
+    </style>
+</head>
+<body>
+<div id="center">
+    <h1><pre>LOGIN</pre></h1>
+    <p id="errorMessage"></p>
+    <p id="okMessage"></p>
+    <label for="id">Identifiant: </label><input id="id" type="text"/><br/>
+    <label for="pass">Mot de passe: </label><input id="pass" type="text"/><br/>
+    <button id="send" onclick="loginButton()">Envoyer</button>
+    <p>Vous avez pas encore de compte <a href="register.html">cliquer ici</a>.</p>
+</div>
+<script>
+    const redirect = function(url, data) {
+        /*
+        let form = document.createElement('form');
+        form.method = method;
+        form.action = url;
+        document.body.appendChild(form);
+        form.submit();*/
+    };
+    function loginButton(){
+        const id = document.getElementById("id").value
+        const pass = document.getElementById("pass").value
+        console.log("id: " + id)
+        console.log("pass: " + pass)
+        //VERIFIER SI ID OU PASS SOIT PLUS PETIT QUE 64
+        fetchLogin({"id": id, password: pass})
+    }
+    function fetchLogin(body){
+        fetch('http://localhost:3000/login', {
+            method: 'POST', // or 'PUT'
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        }).then(response => response.json())
+            .then(data => {
+                if(data.status === 0){
+                    document.getElementById("okMessage").innerHTML = data.msg + "<br/> Vous allez bientôt être rediriger vers le login"
+                    document.getElementById("okMessage").classList.add("Message")
+                    document.getElementById("errorMessage").innerHTML = ""
+                    document.getElementById("errorMessage").classList.remove("Message")
+                    window.sessionStorage["aysao-token"] = JSON.stringify(body);
+                    document.location.href = 'index.html';
+                }
+                else{
+                    document.getElementById("errorMessage").innerHTML = data.msg
+                    document.getElementById("errorMessage").classList.add("Message")
+                    document.getElementById("okMessage").innerHTML = ""
+                    document.getElementById("okMessage").classList.remove("Message")
+                }
+            })
+            .catch((error) => {console.error('Error:', error);});
+
+
+    }
+</script>
+</body>
+</html>

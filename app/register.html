@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body {
+            text-align: center;
+            background-color: #111312;
+            color: white;
+        }
+        #center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%)
+        }
+        .Message{
+            border: 1px solid;
+            padding: 10px;
+            border-radius: 20px;
+        }
+        #errorMessage{
+            /*color: #cf6679;*/
+            background-color: #cf667955;
+            border-color: #cf6679;
+        }
+        #okMessage{
+            background-color: #138A3655;
+            border-color: #138A36;
+        }
+        .warnMessage{
+            background-color: #D7CF0755;
+            border-color: #D7CF07;
+        }
+        a:link{
+            color: red;
+        }
+        a:visited{
+            color: darkred
+        }
+
+    </style>
+    <script>
+        function registerButton() {
+            console.log("Send")
+            const id = document.getElementById("id").value
+            const pass = document.getElementById("pass").value
+            console.log("id: " + id)
+            console.log("pass: " + pass)
+            //VERIFIER SI ID OU PASS SOIT PLUS PETIT QUE 64
+            if(id.length >= 64 || pass.id >= 64){
+                document.getElementById("errorMessage").innerHTML = "Identifiant ou mot de passe trop long"
+                document.getElementById("errorMessage").classList.add("Message")
+                console.log("Mot de passe ou id trop long")
+            }else {
+                fetchRegister({"id": id, password: pass})
+            }
+        }
+        function fetchRegister(body){
+            fetch('http://localhost:3000/register', {
+                method: 'POST', // or 'PUT'
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            }).then(response => response.json())
+                .then(data => {
+                    if(data.status === 0){
+                        document.getElementById("okMessage").innerHTML = data.msg + "<br/> Vous allez bientôt être rediriger vers le login"
+                        document.getElementById("okMessage").classList.add("Message")
+                        document.getElementById("errorMessage").innerHTML = ""
+                        document.getElementById("errorMessage").classList.remove("Message")
+                        setTimeout(() => {document.location.href="login.html"}, 3000)
+                    }
+                    else{
+                        document.getElementById("errorMessage").innerHTML = data.msg
+                        document.getElementById("errorMessage").classList.add("Message")
+                        document.getElementById("okMessage").innerHTML = ""
+                        document.getElementById("okMessage").classList.remove("Message")
+                    }
+                    console.log('Success:', data);
+                })
+                .catch((error) => {console.error('Error:', error);});
+        }
+    </script>
+</head>
+<body>
+    <div id="center">
+        <h1><pre>REGISTER</pre></h1>
+        <p id="errorMessage"></p>
+        <p id="okMessage"></p>
+        <p class="warnMessage Message">Warring: Ce site n'est pas sécurisé, ne mettez pas votre vrai mot de passe</p>
+        <p class="warnMessage Message">Warring: Imposible de changer, ni de récupérer l'id ou mdp en cas de perte</p>
+        <label for="id">Identifiant: </label><input id="id" type="text"/><br/>
+        <label for="pass">Mot de passe: </label><input id="pass" type="text"/><br/>
+        <button id="send" onclick="registerButton()">Envoyer</button>
+        <p>Vous avez deja un compte <a href="login.html">cliquer ici</a>.</p>
+    </div>
+</body>
+</html>
