@@ -11,14 +11,13 @@ socket.on('login', socket_id => {
         socket.emit('login_response', JSON.stringify(token))
     }
 })
+socket.on('error_login_response', _ => {
+    console.log("error_login_errored")
+    window.sessionStorage["login_error"] = "Un probleme dans le session storage <br/> Si actif, désactiver les blockers, ou ressayer de vous connecter dans une nouvelle page"
+    document.location.href="login.html"
+})
 function key_event(event) {
-    if (event.key === "e" && event.type === "keydown") {
-        console.log(socket)
-        console.log(socket.id)
-    } else {
-        console.log(event)
-        socket.emit('message', event.key + event.type)
-    }
+    socket.emit('message', JSON.stringify({id: token.id, password: token.password, socket_id: socket.socket_id, key: event.key, type: event.type}))
 }
 
 window.addEventListener("keyup", (event) => key_event(event), true)

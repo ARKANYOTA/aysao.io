@@ -19,9 +19,12 @@
         <div id="data">
             <h1>All Users<button onclick="actualise()">Actualise</button></h1>
         </div>
-        <div id="igdata">
+        <div>
             <h1>Connected Users</h1>
             <p id="logged"></p>
+            <p id="connected_user"></p>
+            <div id="connected"></div>
+            <div id="igdata"></div>
         </div>
         <ul id="chat">
             <h1>Chat</h1>
@@ -35,10 +38,13 @@
         }
         const dataV = new JSONViewer();
         const igdataV = new JSONViewer();
+        const connected = new JSONViewer();
         document.querySelector("#data").appendChild(dataV.getContainer());
         document.querySelector("#igdata").appendChild(igdataV.getContainer());
+        document.querySelector("#connected").appendChild(connected.getContainer());
         try {
             const socket = io('ws://localhost:9999');
+            const game_socket = io('ws://localhost:8080');
             socket.on('data', text => {
                 //document.getElementById("data").innerHTML = JSON.stringify(JSON.parse(text), null, 2);
                 // document.getElementById("data").innerHTML = jsonViewer.showJSON(text, -1, -1);
@@ -47,13 +53,23 @@
             socket.on('igdata', text => {
                 igdataV.showJSON(JSON.parse(text), -1, 1)
             });
+            socket.on('connected_user', text => {
+                connected.showJSON(JSON.parse(text), -1, 0)
+            });
             socket.on('logged', text => {
                 document.getElementById("logged").innerHTML = text;
+            });
+            game_socket.on('chat', text => {
+                let body = JSON.parse(text)
+                console.log(body)
+                const el = document.createElement('li');
+                el.innerHTML = "Game: " + body.id + " has " + body.state + " " + (body.msg ? body.msg : "") + (body.socket_id ? " with " + body.socket_id : "");
+                document.querySelector('#chat').appendChild(el)
             });
             socket.on('chat', text => {
                 let body = JSON.parse(text)
                 const el = document.createElement('li');
-                el.innerHTML = body.id + " has " + body.state + " " + (body.msg ? body.msg : "");
+                el.innerHTML = "Debug: " + body.id + " has " + body.state + " " + (body.msg ? body.msg : "");
                 document.querySelector('#chat').appendChild(el)
             });
         } catch (e){

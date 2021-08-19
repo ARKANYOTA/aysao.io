@@ -84,12 +84,37 @@ function writeData() {
 }
 
 function AddUserToInGameData(body) {
-    inGameData[body.id] = {
-        "id": body.id,
-        "password": body.password,
-        "socket_id": body.socket_id,
+    if (
+        data.hasOwnProperty(body.id) &&
+        data[body.id].id === body.id && // Un peu useless mais bon pas grave
+        data[body.id].password === body.password && body.password !== undefined
+    ) {
+        console.log(`User ${body.id} has been added to InGameData`)
+        inGameData[body.id] = {
+            "id": body.id,
+            "password": body.password,
+            "socket_id": body.socket_id,
+        }
+        return true
+    } else {
+        console.log(`Warn: User ${body?.id} has rejected of InGameData`)
+        return false
     }
-    changement = true // debug
+}
+
+function verifieConnectedUserData(body){
+    if(
+        inGameData.hasOwnProperty(body.id) &&
+        inGameData[body.id].id === body.id && // Un peu useless mais bon pas grave
+        inGameData[body.id].password === body.password && body.password !== undefined &&
+        inGameData[body.id].socket_id === body.socket_id && body.socket_id !== undefined
+    ){
+        return true
+    } else {
+        console.log(`Warn: User ${body?.id} has false info in InGameData`)
+        return false
+    }
+
 }
 ////////////////////////////////////////////:
 //          EXPRESS
@@ -194,20 +219,51 @@ app.post('/register', function (req, res) {
 ////////////////////////////////////////////:
 //          WEBSOCKET
 ////////////////////////////////////////////:
+let connected_user = {}
 io.on('connection', (socket) => {
-    io.emit('login', socket.id);
-    io_debug.emit('chat', JSON.stringify({id: socket.id, state: "connect"}));
+    io.to(socket.id).emit('login', socket.id);
+    socket.on('login_response', (socket_data) => {
+        socket_data = JSON.parse(socket_data)
+        if(AddUserToInGameData(socket_data)){
+            console.log({id: socket_data.id , socket_id: socket.id, state: "connect"})
+            connected_user[socket.id] = socket_data.id
+            io.emit('chat', JSON.stringify({id: socket_data.id , socket_id: socket.id, state: "connect"}));
+            //io_debug.emit('chat', JSON.stringify({id: socket.id, state: "connect"}));
+        } else {
+            console.log(socket.id)
+            io.to(socket.id).emit("error_login_response", "Utilisateur non connectée ou informations erronées, ou connecter avec un autre endroit")
+        }
+        changement = true //debug
+    });
     socket.on('message', (message) => {
-        io.emit('message', `${socket.id} said ${message}`);
-        io_debug.emit('chat', JSON.stringify({id: socket.id, state: "said", msg: message}));
+        message = JSON.parse(message)
+        message.socket_id = socket.id
+        if(verifieConnectedUserData(message)) {
+            io.emit('message', `${message.id} said ${message.key}`);
+            io_debug.emit('chat', JSON.stringify({id: socket.id, state: "said", msg: message}));
+        } else {
+            console.log(`Bad request ${message.socket_id}`)
+            console.log(message)
+            io.to(socket.id).emit("error_login_response", "Utilisateur non connectée ou informations erronées, ou connecter avec un autre endroit")
+        }
     });
     socket.on('disconnect', () => {
+        /*
+        for(const key in inGameData){
+            console.log(key)
+            console.log(inGameData[key])
+            if(inGameData[key].socket_id === socket.id){
+                console.log("Disconnect")
+                inGameData[key] = undefined
+            }
+
+        }*/
+        console.log(socket.id)
+        console.log(connected_user[socket.id])
+        console.log(inGameData[connected_user[socket.id]])
+        delete inGameData[connected_user[socket.id]]
         io_debug.emit('chat', JSON.stringify({id: socket.id, state: "disconnected"}));
-    });
-    socket.on('login_response', (socket) => {
-        //VERIFIER SI SOCKEtID ou pass ou id est bonne
-        AddUserToInGameData(JSON.parse(socket))
-        changement = true //debug
+        changement = true
     });
 });
 
@@ -222,6 +278,7 @@ function debugSendData(){
     io_debug.emit('data', JSON.stringify(data));
     io_debug.emit('igdata', JSON.stringify(inGameData));
     io_debug.emit('logged', JSON.stringify(logged_user));
+    io_debug.emit('connected_user', JSON.stringify(connected_user));
 }
 
 app.get('/debug_actualise', function (req, res) {
@@ -251,5 +308,5 @@ function AutoSave() {
     setTimeout(() => AutoSave(), 1000 * 60 * 3);
 }
 
-setTimeout(() => AutoSave(), 1000 * 60 * 3);
+// setTimeout(() => AutoSave(), 1000 * 60 * 3);
 changement = true
